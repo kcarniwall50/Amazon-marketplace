@@ -14,31 +14,25 @@ export default function PricingCalculator() {
   useEffect(() => {
     async function displayData() {
       try {
-        // console.log('kp:');
         const data = await fetchBackendData();
-        // console.log('Data from Backend:', data);
 
         const sortedCategories = data.items.sort((a, b) => a.localeCompare(b));
-
-       
 
         // Set the sorted categories to the state
         setCategory(sortedCategories);
       } catch (error) {
-        // console.log("errorkpkp");
         console.error("Failed to display data:", error);
       }
     }
 
-    // Call the function on page load
     displayData();
   }, []);
-  // Empty dependency array means this will run only once on component mount
 
   const [formData, setFormData] = useState<PricingFormData>({
     productCategory: "3D Printers",
     sellingPrice: 0,
     weight: 0,
+    duration: 0,
     shippingMode: "Easy Ship Standard",
     serviceLevel: "Easy Ship Standard Size - Basic",
     productSize: "Standard Size",
@@ -50,13 +44,14 @@ export default function PricingCalculator() {
   const handleCalculate = async () => {
     // verification
 
-    const { sellingPrice, weight } = formData;
+    const { sellingPrice, weight, duration } = formData;
 
     if (sellingPrice <= 0 || weight <= 0) {
       return toast.error("Fields can't be Zero or Negative");
     }
-
-    // console.log(formData);
+    if (duration < 0) {
+      return toast.error("Field can't be Negative");
+    }
 
     try {
       const response = await fetch(
@@ -75,7 +70,6 @@ export default function PricingCalculator() {
       }
 
       const res = await response.json();
-      // console.log("data from backend", res);
       setResults(res);
     } catch (error: any) {
       console.log(error.message);
@@ -112,14 +106,11 @@ export default function PricingCalculator() {
                   onChange={handleInputChange}
                   className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 >
-                  {
-                    // categories.map(category => (
-                    category.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))
-                  }
+                  {category.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -144,6 +135,20 @@ export default function PricingCalculator() {
                   type="number"
                   name="weight"
                   value={formData.weight}
+                  onChange={handleInputChange}
+                  step="0.1"
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Storage Duration (months)
+                </label>
+                <input
+                  type="number"
+                  name="duration"
+                  value={formData.duration}
                   onChange={handleInputChange}
                   step="0.1"
                   className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -179,14 +184,11 @@ export default function PricingCalculator() {
                     onChange={handleInputChange}
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   >
-                    {
-                      // categories.map(category => (
-                      ServiceLevel.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))
-                    }
+                    {ServiceLevel.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -202,9 +204,8 @@ export default function PricingCalculator() {
                     onChange={handleInputChange}
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   >
-                    <option>Standard Size</option>
-                    <option>Oversize/Heavy & Bulky</option>
-                    <option>All Categories</option>
+                    <option>Standard</option>
+                    <option>Heavy & Bulky</option>
                   </select>
                 </div>
 
@@ -243,38 +244,50 @@ export default function PricingCalculator() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Referral Fee:</span>
                     <span className="font-medium">
-                      ₹{results.referralFee.toFixed(2)}
+                      ₹{results.referralFee?.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Weight Handling Fee:</span>
                     <span className="font-medium">
-                      ₹{results.weightHandlingFee.toFixed(2)}
+                      ₹{results.weightHandlingFee?.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Closing Fee:</span>
                     <span className="font-medium">
-                      ₹{results.closingFee.toFixed(2)}
+                      ₹{results.closingFee?.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Pick & Pack Fee:</span>
                     <span className="font-medium">
-                      ₹{results.pickAndPackFee.toFixed(2)}
+                      ₹{results.pickAndPackFee?.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Storage Fee:</span>
+                    <span className="font-medium">
+                      ₹{results.storageFee?.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Removal Fee:</span>
+                    <span className="font-medium">
+                      ₹{results.removalFee?.toFixed(2)}
                     </span>
                   </div>
                   <div className="h-px bg-gray-200 my-4"></div>
                   <div className="flex justify-between text-lg font-semibold">
                     <span className="text-gray-900">Total Fees:</span>
                     <span className="text-blue-600">
-                      ₹{results.totalFees.toFixed(2)}
+                      ₹{results.totalFees?.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-lg font-semibold">
                     <span className="text-gray-900">Net Earnings:</span>
                     <span className="text-green-600">
-                      ₹{results.netEarnings.toFixed(2)}
+                      ₹{results.netEarnings?.toFixed(2)}
                     </span>
                   </div>
                 </div>

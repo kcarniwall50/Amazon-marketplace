@@ -8,6 +8,8 @@ const {
   calculateWeightHandlingFee,
   calculateClosingFee,
   calculatePickAndPackFee,
+  calculateStorageFee,
+  calculateRemovalFee,
   calculateTotalFees,
 } = require("./calculator"); // Import calculation functions
 
@@ -24,8 +26,6 @@ app.use(
 
 // Define the port
 const PORT = process.env.PORT || 3000;
-
-
 
 // API to fetch distinct categories
 app.get("/api/data", (req, res) => {
@@ -47,11 +47,23 @@ app.post("/api/v1/profitability-calculator", (req, res) => {
     productCategory,
     sellingPrice,
     weight,
+    duration,
     shippingMode,
     serviceLevel,
     productSize,
     location,
   } = req.body;
+
+  console.log(
+    productCategory,
+    sellingPrice,
+    weight,
+    duration,
+    shippingMode,
+    serviceLevel,
+    productSize,
+    location
+  );
 
   // Validate required fields
   if (
@@ -61,7 +73,8 @@ app.post("/api/v1/profitability-calculator", (req, res) => {
     !shippingMode ||
     !serviceLevel ||
     !productSize ||
-    !location
+    !location ||
+    !duration
   ) {
     return res.status(400).json({ error: "All fields are required" });
   }
@@ -77,17 +90,22 @@ app.post("/api/v1/profitability-calculator", (req, res) => {
     }
 
     const weightHandlingFee = calculateWeightHandlingFee(
-      shippingMode,
-      weight,
       serviceLevel,
-      location,
-      productSize
+      weight,
+      location
     );
     const closingFee = calculateClosingFee(shippingMode, sellingPrice);
-    const pickAndPackFee = calculatePickAndPackFee(shippingMode, productSize);
+    const pickAndPackFee = calculatePickAndPackFee(productSize);
+    const storageFee = calculateStorageFee(duration); // considering per cubic foot
+    const removalFee = calculateRemovalFee(productSize, shippingMode);
 
     const totalFees =
-      referralFee + weightHandlingFee + closingFee + pickAndPackFee;
+      referralFee +
+      weightHandlingFee +
+      closingFee +
+      pickAndPackFee +
+      storageFee +
+      removalFee;
     const netEarnings = sellingPrice - totalFees;
 
     // Send response with calculated referral fee
@@ -106,6 +124,8 @@ app.post("/api/v1/profitability-calculator", (req, res) => {
       weightHandlingFee,
       closingFee,
       pickAndPackFee,
+      storageFee,
+      removalFee,
       totalFees,
       netEarnings,
     });
